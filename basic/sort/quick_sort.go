@@ -4,6 +4,41 @@ package sort
 // 递归公式：quickSort(l, r) = quickSort(l...pivot) + quick(pivot+1...r)
 // 推出条件：pivot >= r
 
+// 快速排序优化版，手动维护操作栈
+func quickSortWithStack(arr []int, l, r int) []int {
+	type stackFrame struct {
+		l int
+		r int
+	}
+
+	stack := []stackFrame{{l, r}}
+
+	for len(stack) > 0 {
+		// 弹出栈顶区间
+		frame := stack[len(stack)-1]
+		stack = stack[:len(stack)-1]
+		l, r := frame.l, frame.r
+
+		if l >= r {
+			continue
+		}
+
+		// 获取分区点
+		pivot := partition(arr, l, r)
+
+		if pivot+1 < r {
+			// 将右区压栈, 避免无效压栈
+			stack = append(stack, stackFrame{pivot + 1, r})
+		}
+
+		if l < pivot-1 {
+			stack = append(stack, stackFrame{l, pivot - 1})
+		}
+	}
+
+	return arr
+}
+
 func quickSort(arr []int, l, r int) {
 	if l >= r {
 		return
