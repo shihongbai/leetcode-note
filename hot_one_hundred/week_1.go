@@ -166,3 +166,162 @@ func moveZeroes(nums []int) {
 		}
 	}
 }
+
+// 206. 反转链表
+//func reverseList(head *ListNode) *ListNode {
+//	// 递归实现
+//	if head == nil || head.Next == nil {
+//		return head
+//	}
+//
+//	newHead := reverseList(head.Next)
+//	head.Next.Next = head
+//	head.Next = nil
+//	return newHead
+//}
+
+// 迭代实现
+func reverseList(head *ListNode) *ListNode {
+	var pre *ListNode
+	curr := head
+	for curr != nil {
+		next := curr.Next
+		curr.Next = pre
+		pre = curr
+		curr = next
+	}
+
+	return pre
+}
+
+// 234. 回文链表
+// 使用O(n)时间复杂度和O(1)额外空间复杂度解决。
+func isPalindrome(head *ListNode) bool {
+	if head == nil || head.Next == nil {
+		return true
+	}
+
+	// 1. 找到链表的中点
+	firstHalfEnd := findMiddle(head)
+	// 2. 翻转链表的后半部分
+	secondHalfStart := reverseList(firstHalfEnd.Next)
+	// 3. 比较前半部分和后半部分
+	result := false
+	ptr1 := head
+	ptr2 := secondHalfStart
+	for ptr1.Val == ptr2.Val {
+		ptr1 = ptr1.Next
+		ptr2 = ptr2.Next
+
+		if ptr1 == nil || ptr2 == nil {
+			result = true
+			break
+		}
+	}
+	// 4. 恢复链表
+	firstHalfEnd.Next = reverseList(secondHalfStart)
+	return result
+}
+
+func findMiddle(head *ListNode) *ListNode {
+	l, f := head, head
+
+	for f.Next != nil || f.Next.Next != nil {
+		l = l.Next
+		f = f.Next.Next
+	}
+
+	return l
+}
+
+// 141. 环形链表
+func hasCycle(head *ListNode) bool {
+	if head == nil || head.Next == nil {
+		return false
+	}
+
+	slow, fast := head, head
+
+	for fast != nil && fast.Next != nil {
+		slow = slow.Next
+		fast = fast.Next.Next
+
+		if slow == fast {
+			return true
+		}
+	}
+
+	return false
+}
+
+// 142. 环形链表 II
+func detectCycle(head *ListNode) *ListNode {
+	slow, fast := head, head
+
+	for fast != nil {
+		slow = slow.Next
+		if fast.Next == nil {
+			return nil
+		}
+		fast = fast.Next.Next
+
+		if fast == slow {
+			// 存在环
+			p := head
+			for p != slow {
+				p = p.Next
+				slow = slow.Next
+			}
+			return p
+		}
+	}
+	return nil
+}
+
+// 21. 合并两个有序链表
+func mergeTwoLists(list1 *ListNode, list2 *ListNode) *ListNode {
+	// 递归实现
+	//if list1 == nil {
+	//	return list2
+	//}
+	//
+	//if list2 == nil {
+	//	return list1
+	//}
+	//
+	//if list1.Val < list2.Val {
+	//	list1.Next = mergeTwoLists(list1.Next, list2)
+	//	return list1
+	//} else {
+	//	list2.Next = mergeTwoLists(list1, list2.Next)
+	//	return list2
+	//}
+
+	// 迭代实现
+	guard := &ListNode{
+		Val:  -1,
+		Next: nil,
+	}
+
+	pre := guard
+	for list1 != nil && list2 != nil {
+		if list1.Val <= list2.Val {
+			pre.Next = list1
+			list1 = list1.Next
+		} else {
+			pre.Next = list2
+			list2 = list2.Next
+		}
+		pre = pre.Next
+	}
+
+	if list1 != nil {
+		pre.Next = list1
+	}
+
+	if list2 != nil {
+		pre.Next = list2
+	}
+
+	return guard.Next
+}
