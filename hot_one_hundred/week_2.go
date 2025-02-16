@@ -171,3 +171,236 @@ func inorderTraversal(root *TreeNode) (res []int) {
 	}
 	return
 }
+
+// 24. 两两交换链表中的节点
+func swapPairs(head *ListNode) *ListNode {
+	dummy := &ListNode{0, head}
+	temp := dummy
+	for temp.Next != nil && temp.Next.Next != nil {
+		node1 := temp.Next
+		node2 := temp.Next.Next
+		temp.Next = node2
+		node1.Next = node2.Next
+		node2.Next = node1
+		temp = node1
+	}
+	return dummy.Next
+}
+
+type Node struct {
+	Val    int
+	Next   *Node
+	Random *Node
+}
+
+var cachedNode map[*Node]*Node
+
+func deepCopy(node *Node) *Node {
+	if node == nil {
+		return nil
+	}
+	if n, has := cachedNode[node]; has {
+		return n
+	}
+	newNode := &Node{Val: node.Val}
+	cachedNode[node] = newNode
+	newNode.Next = deepCopy(node.Next)
+	newNode.Random = deepCopy(node.Random)
+	return newNode
+}
+
+// 138. 复制带随机指针的链表
+func copyRandomList(head *Node) *Node {
+	// 递归加回溯实现
+	//cachedNode = map[*Node]*Node{}
+	//return deepCopy(head)
+
+	// 迭代 + 节点拆分实现
+	if head == nil {
+		return nil
+	}
+
+	// 链表复制
+	for curr := head; curr != nil; curr = curr.Next.Next {
+		curr.Next = &Node{Val: curr.Val, Next: curr.Next}
+	}
+
+	// 随机节点复制
+	for curr := head; curr != nil; curr = curr.Next.Next {
+		if curr.Random != nil {
+			curr.Next.Random = curr.Random.Next
+		}
+	}
+
+	// 链表拆分
+	headNew := head.Next
+	for node := head; node != nil; node = node.Next {
+		nodeNew := node.Next
+		node.Next = node.Next.Next
+		if nodeNew.Next != nil {
+			nodeNew.Next = nodeNew.Next.Next
+		}
+	}
+
+	return headNew
+}
+
+// 148. 排序链表
+// 自底向上归并实现
+func merge(head1, head2 *ListNode) *ListNode {
+	dummyHead := &ListNode{}
+	temp, temp1, temp2 := dummyHead, head1, head2
+	for temp1 != nil && temp2 != nil {
+		if temp1.Val <= temp2.Val {
+			temp.Next = temp1
+			temp1 = temp1.Next
+		} else {
+			temp.Next = temp2
+			temp2 = temp2.Next
+		}
+		temp = temp.Next
+	}
+	if temp1 != nil {
+		temp.Next = temp1
+	} else if temp2 != nil {
+		temp.Next = temp2
+	}
+	return dummyHead.Next
+}
+
+/*
+sortList 使用归并排序算法对链表进行排序
+参数:
+  - head: *ListNode 链表头节点指针
+
+返回值:
+  - *ListNode 排序后的链表头节点指针
+*/
+func sortList(head *ListNode) *ListNode {
+	if head == nil {
+		return head
+	}
+
+	// 计算链表总长度
+	length := 0
+	for node := head; node != nil; node = node.Next {
+		length++
+	}
+
+	dummyHead := &ListNode{Next: head}
+	// 自底向上的归并排序实现
+	for subLength := 1; subLength < length; subLength <<= 1 {
+		prev, cur := dummyHead, dummyHead.Next
+		// 遍历整个链表进行分组归并
+		for cur != nil {
+			// 获取第一个子链表头节点
+			head1 := cur
+			for i := 1; i < subLength && cur.Next != nil; i++ {
+				cur = cur.Next
+			}
+
+			// 获取第二个子链表头节点并切断第一个子链表
+			head2 := cur.Next
+			cur.Next = nil
+			cur = head2
+			// 保存后续节点指针并切断第二个子链表
+			for i := 1; i < subLength && cur.Next != nil; i++ {
+				cur = cur.Next
+			}
+
+			// 遍历并切断第二个子链表
+			var next *ListNode
+			if cur != nil {
+				next = cur.Next
+				cur.Next = nil
+			}
+
+			// 合并两个子链表并连接到结果链表
+			prev.Next = merge(head1, head2)
+
+			// 移动prev到已排序部分的末尾
+			if prev != nil {
+				prev = prev.Next
+			}
+			cur = next
+		}
+	}
+	return dummyHead.Next
+}
+
+// 104. 二叉树的最大深度
+func maxDepth(root *TreeNode) int {
+	if root == nil {
+		return 0
+	}
+
+	return max(maxDepth(root.Left), maxDepth(root.Right)) + 1
+}
+
+func max(a, b int) int {
+	if a > b {
+		return a
+	}
+	return b
+}
+
+// 226. 翻转二叉树
+func invertTree(root *TreeNode) *TreeNode {
+	if root == nil {
+		return root
+	}
+
+	invertTree(root.Left)
+	invertTree(root.Right)
+	root.Left, root.Right = root.Right, root.Left
+	return root
+}
+
+// 101. 对称二叉树
+func isSymmetric(root *TreeNode) bool {
+	// 递归实现
+	//if root == nil {
+	//	return true
+	//}
+	//
+	//return check(root.Left, root.Right)
+
+	// 迭代实现: 队列实现
+	if root == nil {
+		return true
+	}
+
+	queue := []*TreeNode{root.Left, root.Right}
+	for len(queue) > 0 {
+		u, v := queue[0], queue[1]
+		queue = queue[2:]
+		if u == nil && v == nil {
+			continue
+		}
+		if u == nil || v == nil {
+			return false
+		}
+		if u.Val != v.Val {
+			return false
+		}
+
+		queue = append(queue, u.Left)
+		queue = append(queue, v.Right)
+
+		queue = append(queue, u.Right)
+		queue = append(queue, v.Left)
+	}
+	return true
+}
+
+func check(left *TreeNode, right *TreeNode) bool {
+	if left == nil && right == nil {
+		return true
+	}
+
+	if left == nil || right == nil {
+		return false
+	}
+
+	return left.Val == right.Val && check(left.Left, right.Right) && check(left.Right, right.Left)
+}
