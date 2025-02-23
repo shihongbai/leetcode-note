@@ -1,5 +1,10 @@
 package hot_one_hundred
 
+import (
+	"math/rand"
+	"time"
+)
+
 // 74. 搜索二维矩阵
 func searchMatrix(matrix [][]int, target int) bool {
 	// 二分法
@@ -338,4 +343,196 @@ func majorityElement(nums []int) int {
 	}
 
 	return candidate
+}
+
+// 215. 数组中的第K个最大元素
+// 请注意，你需要找的是数组排序后的第 k 个最大的元素，而不是第 k 个不同的元素。
+// findKthLargest 寻找数组中第k大的元素。
+// nums: 输入的整数数组。
+// k: 指定的第k大元素。
+// 返回值: 数组中第k大的元素。
+func findKthLargest(nums []int, k int) int {
+	n := len(nums)
+	// 使用quickSelect算法找出第k大的元素，转换为寻找第n-k小的元素。
+	return quickSelect(nums, 0, n-1, n-k)
+}
+
+// quickSelect 快速选择算法，用于寻找数组中第k小的元素。
+// nums: 输入的整数数组。
+// l: 数组左边界。
+// r: 数组右边界。
+// k: 指定的第k小元素。
+// 返回值: 数组中第k小的元素。
+func quickSelect(nums []int, l, r, k int) int {
+	// 当左右边界相等时，说明找到了目标元素。
+	if l == r {
+		return nums[k]
+	}
+	partition := nums[l]
+	i := l - 1
+	j := r + 1
+	// 重新调整数组，使得所有小于partition的元素在左边，所有大于partition的元素在右边。
+	for i < j {
+		for i++; nums[i] < partition; i++ {
+		}
+		for j--; nums[j] > partition; j-- {
+		}
+		// 如果i<j，交换位置。
+		if i < j {
+			nums[i], nums[j] = nums[j], nums[i]
+		}
+	}
+	// 根据k的位置，决定是在左边还是右边继续寻找。
+	if k <= j {
+		return quickSelect(nums, l, j, k)
+	} else {
+		return quickSelect(nums, j+1, r, k)
+	}
+}
+
+// 堆实现
+// findKthLargestV2 寻找数组中的第K个最大元素。
+// 通过构建最大堆的方式，将数组的前K个元素构建为最大堆，然后通过交换堆顶元素到数组末尾并调整堆的结构，
+// 最终找到第K大的元素。
+// 参数:
+//
+//	nums []int: 输入的整数数组。
+//	k int: 要寻找的第K大元素的索引。
+//
+// 返回值:
+//
+//	int: 数组中第K大的元素。
+func findKthLargestV2(nums []int, k int) int {
+	heapSize := len(nums)
+	// 构建最大堆
+	buildMaxHeap(nums, heapSize)
+	for i := len(nums) - 1; i >= len(nums)-k+1; i-- {
+		// 交换堆顶元素到数组末尾
+		nums[0], nums[i] = nums[i], nums[0]
+		heapSize--
+		// 调整堆的结构，保持最大堆的性质
+		maxHeapify(nums, 0, heapSize)
+	}
+	// 返回第K大的元素
+	return nums[0]
+}
+
+// buildMaxHeap 构建最大堆。
+// 从数组的中间位置开始，逐个调整堆的结构，确保每个节点的值大于其子节点的值。
+// 参数:
+//
+//	a []int: 输入的整数数组。
+//	heapSize int: 堆的大小。
+func buildMaxHeap(a []int, heapSize int) {
+	for i := heapSize/2 - 1; i >= 0; i-- {
+		maxHeapify(a, i, heapSize)
+	}
+}
+
+// maxHeapify 最大堆化。
+// 给定一个节点索引i，调整堆的结构，确保节点i的值大于其子节点的值，并递归地调整其子树以保持最大堆的性质。
+// 参数:
+//
+//	a []int: 输入的整数数组。
+//	i int: 要调整的节点索引。
+//	heapSize int: 堆的大小。
+func maxHeapify(a []int, i, heapSize int) {
+	l, r, largest := i*2+1, i*2+2, i
+	// 找到左子节点中最大的值
+	if l < heapSize && a[l] > a[largest] {
+		largest = l
+	}
+	// 找到右子节点中最大的值
+	if r < heapSize && a[r] > a[largest] {
+		largest = r
+	}
+	// 如果最大值不是当前节点，交换值并递归调整子树
+	if largest != i {
+		a[i], a[largest] = a[largest], a[i]
+		maxHeapify(a, largest, heapSize)
+	}
+}
+
+// 347. 前 K 个高频元素
+// topKFrequent 返回数组中出现频率最高的 k 个元素。
+// nums: 输入的整数数组
+// k: 需要返回的频率最高元素的数量
+func topKFrequent(nums []int, k int) []int {
+	occurrences := map[int]int{}
+	// 获取每个数字出现次数
+	for _, num := range nums {
+		occurrences[num]++
+	}
+	values := [][]int{}
+	// 将map中的键值对作为数组的元素，方便后续排序
+	for key, value := range occurrences {
+		values = append(values, []int{key, value})
+	}
+	ret := make([]int, k)
+	// 使用快速排序算法对values数组进行排序，以找出出现频率最高的k个元素
+	qsort(values, 0, len(values)-1, ret, 0, k)
+	return ret
+}
+
+// qsort 是一个辅助函数，用于对values数组进行快速排序，以便找出出现频率最高的前k个元素。
+// values: 需要排序的数组，每个元素是一个包含数字和其出现次数的二元数组
+// start, end: 定义了需要排序的数组部分的起始和结束索引
+// ret: 用于存储结果的数组
+// retIndex: 当前在ret数组中的填充位置
+// k: 需要找出的频率最高元素的数量
+func qsort(values [][]int, start, end int, ret []int, retIndex, k int) {
+	rand.Seed(time.Now().UnixNano())
+	// 随机选择一个元素作为基准值，以提高排序效率
+	picked := rand.Int()%(end-start+1) + start
+	values[picked], values[start] = values[start], values[picked]
+
+	pivot := values[start][1]
+	index := start
+
+	// 使用双指针快速排序算法，将不小于基准值的元素放到左边，小于基准值的元素放到右边
+	for i := start + 1; i <= end; i++ {
+		if values[i][1] >= pivot {
+			values[index+1], values[i] = values[i], values[index+1]
+			index++
+		}
+	}
+	values[start], values[index] = values[index], values[start]
+
+	// 根据k值和当前的index判断前k大的值在左侧的子数组里还是在右侧的子数组里
+	if k <= index-start {
+		// 前 k 大的值在左侧的子数组里
+		qsort(values, start, index-1, ret, retIndex, k)
+	} else {
+		// 前 k 大的值等于左侧的子数组全部元素加上右侧子数组中前 k - (index - start + 1) 大的值
+		for i := start; i <= index; i++ {
+			ret[retIndex] = values[i][0]
+			retIndex++
+		}
+		if k > index-start+1 {
+			qsort(values, index+1, end, ret, retIndex, k-(index-start+1))
+		}
+	}
+}
+
+// 295. 数据流的中位数
+type MedianFinder struct {
+	nums    []int
+	minHeap []int
+	maxHeap []int
+}
+
+func ConstructorMedianFinder() MedianFinder {
+	return MedianFinder{
+		nums:    []int{},
+		minHeap: []int{},
+		maxHeap: []int{},
+	}
+}
+
+func (this *MedianFinder) AddNum(num int) {
+
+}
+
+func (this *MedianFinder) FindMedian() float64 {
+
 }
