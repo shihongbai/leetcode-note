@@ -1,7 +1,9 @@
 package hot_one_hundred
 
 import (
+	"container/heap"
 	"math/rand"
+	"sort"
 	"time"
 )
 
@@ -515,24 +517,112 @@ func qsort(values [][]int, start, end int, ret []int, retIndex, k int) {
 }
 
 // 295. 数据流的中位数
+// MedianFinder 是一个用于查找中位数的数据结构，包含两个堆：queMin 和 queMax。
+// queMin 是一个小顶堆，queMax 是一个大顶堆。
 type MedianFinder struct {
-	nums    []int
-	minHeap []int
-	maxHeap []int
+	queMin, queMax hp
 }
 
+// ConstructorMedianFinder 是构造函数，返回一个 MedianFinder 实例。
 func ConstructorMedianFinder() MedianFinder {
-	return MedianFinder{
-		nums:    []int{},
-		minHeap: []int{},
-		maxHeap: []int{},
+	return MedianFinder{}
+}
+
+// AddNum 向数据结构中添加一个数字。
+// 如果 num 小于或等于小顶堆的最大值，则将其添加到小顶堆；
+// 否则将其添加到大顶堆。这样可以确保小顶堆中的元素都小于等于大顶堆中的元素。
+func (mf *MedianFinder) AddNum(num int) {
+	minQ, maxQ := &mf.queMin, &mf.queMax
+	if minQ.Len() == 0 || num <= -minQ.IntSlice[0] {
+		heap.Push(minQ, -num)
+		if maxQ.Len()+1 < minQ.Len() {
+			heap.Push(maxQ, -heap.Pop(minQ).(int))
+		}
+	} else {
+		heap.Push(maxQ, num)
+		if maxQ.Len() > minQ.Len() {
+			heap.Push(minQ, -heap.Pop(maxQ).(int))
+		}
 	}
 }
 
-func (this *MedianFinder) AddNum(num int) {
-
+// FindMedian 计算并返回当前所有已添加数字的中位数。
+// 如果总数字个数为奇数，则小顶堆的堆顶即为中位数；
+// 如果为偶数，则小顶堆和大顶堆堆顶的平均值即为中位数。
+func (mf *MedianFinder) FindMedian() float64 {
+	minQ, maxQ := mf.queMin, mf.queMax
+	if minQ.Len() > maxQ.Len() {
+		return float64(-minQ.IntSlice[0])
+	}
+	return float64(maxQ.IntSlice[0]-minQ.IntSlice[0]) / 2
 }
 
-func (this *MedianFinder) FindMedian() float64 {
+// hp 是一个实现了 heap.Interface 的结构体，用于作为小顶堆或大顶堆。
+type hp struct{ sort.IntSlice }
 
+// Push 向堆中插入一个元素。
+func (h *hp) Push(v interface{}) { h.IntSlice = append(h.IntSlice, v.(int)) }
+
+// Pop 从堆中移除并返回最后一个元素。
+func (h *hp) Pop() interface{} {
+	a := h.IntSlice
+	v := a[len(a)-1]
+	h.IntSlice = a[:len(a)-1]
+	return v
+}
+
+// 73. 矩阵置零
+func setZeroes(matrix [][]int) {
+	m, n := len(matrix), len(matrix[0])
+
+	// 标记第一行和第一列是否需要置零
+	rowZero, colZero := false, false
+
+	// 检查第一行是否需要置零
+	for i := 0; i < n; i++ {
+		if matrix[0][i] == 0 {
+			rowZero = true
+			break
+		}
+	}
+
+	// 检查第一列是否需要置零
+	for i := 0; i < n; i++ {
+		if matrix[i][0] == 0 {
+			colZero = true
+			break
+		}
+	}
+
+	// 从第二行和第二列开始，检查每个元素是否需要置零
+	for i := 1; i < m; i++ {
+		for j := 1; j < n; j++ {
+			if matrix[i][j] == 0 {
+				matrix[i][0] = 0
+				matrix[0][j] = 0
+			}
+		}
+	}
+
+	// 从第二行和第二列开始，将需要置零的元素置零
+	for i := 1; i < m; i++ {
+		for j := 1; j < n; j++ {
+			if matrix[i][0] == 0 || matrix[0][j] == 0 {
+				matrix[i][j] = 0
+			}
+		}
+	}
+
+	// 将第一行和第一列标记为0
+	if colZero {
+		for i := 0; i < m; i++ {
+			matrix[i][0] = 0
+		}
+	}
+
+	if rowZero {
+		for i := 0; i < n; i++ {
+			matrix[0][i] = 0
+		}
+	}
 }
