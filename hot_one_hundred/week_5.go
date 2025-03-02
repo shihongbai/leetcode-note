@@ -1,5 +1,7 @@
 package hot_one_hundred
 
+import "sort"
+
 // 54. 螺旋矩阵
 func spiralOrder(matrix [][]int) []int {
 	if len(matrix) == 0 || len(matrix[0]) == 0 {
@@ -325,4 +327,188 @@ func coinChange(coins []int, amount int) int {
 	}
 
 	return dp[amount]
+}
+
+// 11. 盛最多水的容器
+// 双指针实现
+func maxArea(height []int) int {
+	left, right := 0, len(height)-1
+	result := 0
+
+	// 双指针遍历
+	for left < right {
+		// 计算当前容器高度较低的一个
+		var h int
+		if height[left] < height[right] {
+			h = height[left]
+		} else {
+			h = height[right]
+		}
+
+		// 计算面积
+		area := h * (right - left)
+		if area > result {
+			result = area
+		}
+		// 移动高度较小的一侧指针
+		if height[left] < height[right] {
+			left++
+		} else {
+			right--
+		}
+	}
+
+	return result
+}
+
+// 15. 三数之和
+// 双指针实现
+func threeSum(nums []int) [][]int {
+	result := [][]int{}
+	n := len(nums)
+	if n < 3 {
+		return result
+	}
+
+	// 数组排序
+	sort.Ints(nums)
+
+	// 双指针遍历
+	for i := 0; i < n-2; i++ {
+		// 固定第一个数, 因为数组有序，后面全部大于零，直接跳出循环
+		if nums[i] > 0 {
+			break
+		}
+
+		// 跳过重复数
+		if i > 0 && nums[i] == nums[i-1] {
+			continue
+		}
+
+		// 双指针搜索
+		left, right := i+1, n-1
+		for left < right {
+			sum := nums[i] + nums[left] + nums[right]
+			if sum < 0 {
+				left++
+			} else if sum > 0 {
+				right--
+			} else {
+				// 找到满足条件的三元组
+				result = append(result, []int{nums[i], nums[left], nums[right]})
+				// 跳过重复数
+				for left < right && nums[left] == nums[left+1] {
+					left++
+				}
+				for left < right && nums[right] == nums[right-1] {
+					right--
+				}
+				left++
+				right--
+			}
+		}
+	}
+
+	return result
+}
+
+// 42. 接雨水
+// 双指针实现
+// 时间复杂度 O(n); 空间复杂度 O(1)
+func trap(height []int) int {
+	if len(height) == 0 {
+		return 0
+	}
+
+	left, right := 0, len(height)-1
+	leftMax, rightMax := 0, 0
+	water := 0
+
+	// 双指针移动左右两端
+	if left < right {
+		if height[left] < height[right] {
+			// 左侧较小，决定了容器高度
+			if height[left] >= leftMax {
+				leftMax = height[left]
+			} else {
+				// 累加水量
+				water += leftMax - height[left]
+			}
+			left++
+		} else {
+			if height[right] >= rightMax {
+				rightMax = height[right]
+			} else {
+				water += rightMax - height[right]
+			}
+			right--
+		}
+	}
+
+	return water
+}
+
+// 3. 无重复字符的最长子串
+// 滑动窗口实现
+func lengthOfLongestSubstring(s string) int {
+	// 构建一个map， 用于记录字符上次出现的位置
+	charIndexMap := make(map[rune]int)
+	maxLength := 0
+	left := 0
+
+	// 遍历字符串，使用滑动窗口的方式
+	for right, ch := range s {
+		// 如果字符串出现过，并且出现的位置不在当前窗口的左边界
+		if prevIndex, exists := charIndexMap[ch]; exists && prevIndex >= left {
+			// 更新窗口的左边界
+			left = prevIndex + 1
+		}
+		// 更新字符出现的位置
+		charIndexMap[ch] = right
+		// 计算窗口长度
+		if currLen := right - left + 1; currLen > maxLength {
+			maxLength = currLen
+		}
+	}
+
+	return maxLength
+}
+
+// 438. 找到字符串中所有字母异位词
+// 滑动窗口实现
+func findAnagrams(s string, p string) []int {
+	var res []int
+	ns, np := len(s), len(p)
+	if ns < np {
+		return res
+	}
+
+	// 使用长度26的数组，统计p中每个字符出现的次数
+	var pCount, sCount [26]int
+
+	// 初始化
+	for i := 0; i < np; i++ {
+		pCount[p[i]-'a']++
+		sCount[s[i]-'a']++
+	}
+
+	// 如果两个数组的类型和长度相同，可以直接使用 == 操作符进行比较。
+	//这会逐个元素比较，即判断两个数组中每个位置的数字是否都相等。
+	if pCount == sCount {
+		res = append(res, 0)
+	}
+
+	// 滑动窗口
+	for i := np; i < ns; i++ {
+		// 加入新的字符串到窗口
+		sCount[s[i]-'a']++
+		// 移除窗口最左侧的字符
+		sCount[s[i-np]-'a']--
+
+		// 如果完全匹配，计入本次下标
+		if pCount == sCount {
+			res = append(res, i-np+1)
+		}
+	}
+	return res
 }
